@@ -26,8 +26,6 @@ export const Route = createFileRoute("/purchase")({
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
-    // Checkout pages should not be indexed.
-    ...{},
   }),
   component: PurchasePage,
 });
