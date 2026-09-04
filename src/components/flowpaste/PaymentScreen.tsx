@@ -16,14 +16,15 @@ export function PaymentScreen({
   onBack: () => void;
 }) {
   const [submitting, setSubmitting] = useState(false);
+  const [userPaymentRef, setUserPaymentRef] = useState(order.reference);
 
   async function handleConfirm() {
     if (submitting) return;
     setSubmitting(true);
     try {
-      const result = await verifyPayment(order);
+      const result = await verifyPayment(order, userPaymentRef.trim() || order.reference);
       toast.success("Payment submitted", {
-        description: "We'll email your access details once payment is verified.",
+        description: "Admin will verify your reference ID and activate your credentials.",
       });
       onSubmitted(result.order);
     } catch {
@@ -59,24 +60,43 @@ export function PaymentScreen({
         </div>
         <p className="mt-3 text-sm font-medium">Scan with your preferred UPI app</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          Placeholder QR — live payment details will appear here once payments are connected.
+          Pay via PhonePe, Google Pay, Paytm, or any UPI app.
         </p>
       </div>
 
       <ol className="mt-6 space-y-2 text-sm text-muted-foreground">
         <li>1. Open any UPI app and scan the QR code above.</li>
         <li>2. Pay exactly {order.plan.priceLabel}.</li>
-        <li>3. Add the reference below in the payment note, then return here.</li>
+        <li>3. Enter your UPI Transaction Reference / UTR below so the admin can verify it.</li>
       </ol>
 
-      <div className="mt-5 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-dashed border-border px-4 py-3">
-        <div className="min-w-0">
-          <p className="text-xs text-muted-foreground">Payment reference</p>
-          <p className="truncate font-mono text-sm font-semibold">{order.reference}</p>
+      <div className="mt-5 space-y-3 rounded-xl border border-dashed border-border p-4">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+          <div className="min-w-0">
+            <p className="text-xs text-muted-foreground">Generated Order Ref</p>
+            <p className="truncate font-mono text-sm font-semibold text-primary">{order.reference}</p>
+          </div>
+          <span className="shrink-0 rounded-md bg-accent px-2 py-1 text-[0.65rem] font-semibold text-accent-foreground">
+            {order.id}
+          </span>
         </div>
-        <span className="shrink-0 rounded-md bg-accent px-2 py-1 text-[0.65rem] font-semibold text-accent-foreground">
-          {order.id}
-        </span>
+
+        <div className="pt-2 border-t border-border/50">
+          <label htmlFor="upi-ref" className="block text-xs font-semibold text-foreground mb-1.5">
+            UPI UTR / Payment Reference ID
+          </label>
+          <input
+            id="upi-ref"
+            type="text"
+            placeholder="e.g. 423812345678 or UPI reference"
+            value={userPaymentRef}
+            onChange={(e) => setUserPaymentRef(e.target.value)}
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            The admin checks this reference ID against their UPI payment to activate your account.
+          </p>
+        </div>
       </div>
 
       <p className="mt-4 flex items-start gap-2 text-xs text-muted-foreground">

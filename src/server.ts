@@ -44,9 +44,35 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+import { handleApiRequest } from "./lib/server/api-handler";
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const url = new URL(request.url);
+      if (url.pathname.startsWith("/api/")) {
+        let body: Record<string, unknown> | null = null;
+        if (request.method !== "GET" && request.method !== "HEAD") {
+          try {
+            const text = await request.text();
+            body = text ? (JSON.parse(text) as Record<string, unknown>) : null;
+          } catch {
+            body = null;
+          }
+        }
+        const apiRes = await handleApiRequest(
+          request.method,
+          url.pathname,
+          body,
+          request.headers.get("authorization"),
+          request.headers.get("cookie")
+        );
+        return new Response(JSON.stringify(apiRes.body), {
+          status: apiRes.status,
+          headers: apiRes.headers,
+        });
+      }
+
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);

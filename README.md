@@ -132,13 +132,13 @@ Keep the copy concise.
 Three steps:
 
 1. Enter your details
-Create your FlowPaste account using your name and email.
+   Create your FlowPaste account using your name and email.
 
 2. Complete your purchase
-Choose a plan and scan the displayed QR code to make payment.
+   Choose a plan and scan the displayed QR code to make payment.
 
 3. Get access
-After payment confirmation, your account/access credentials will be generated.
+   After payment confirmation, your account/access credentials will be generated.
 
 For this first version, payment verification does NOT need to be implemented. Build the UI and interaction flow so it can be connected to Google Apps Script later.
 
