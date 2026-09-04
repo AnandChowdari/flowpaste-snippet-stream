@@ -3,10 +3,12 @@ import {
   Clock3,
   Feather,
   Globe,
+  KeyRound,
   LayoutPanelTop,
   Search,
   ShieldCheck,
   Sliders,
+  Sparkles,
 } from "lucide-react";
 
 const FEATURES = [
@@ -14,6 +16,16 @@ const FEATURES = [
   { icon: Sliders, title: "Quick-access interface", body: "Your snippets one click away." },
   { icon: Search, title: "Search your snippets", body: "Filter by name or content instantly." },
   { icon: Clock3, title: "Recently used items", body: "Your latest text stays on top." },
+  {
+    icon: Sparkles,
+    title: "AI Assist",
+    body: "One click reads the text on your page, drafts a response with AI, and drops it into the active editor.",
+  },
+  {
+    icon: KeyRound,
+    title: "Bring your own key",
+    body: "AI Assist runs on your own free Gemini API key — paste it once in the extension and it stays on your device.",
+  },
   { icon: Feather, title: "Lightweight and fast", body: "Minimal footprint, no lag." },
   { icon: Check, title: "Simple setup", body: "Install and start in under a minute." },
   { icon: Globe, title: "Works in the browser", body: "No extra apps to install." },
