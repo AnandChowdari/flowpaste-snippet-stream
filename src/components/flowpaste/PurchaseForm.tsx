@@ -33,7 +33,9 @@ export function PurchaseForm({
   const plan = getPlan(planId);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [errors, setErrors] = useState<{ name?: string; email?: string }>({});
+  const [errors, setErrors] = useState<{ name?: string | undefined; email?: string | undefined }>(
+    {},
+  );
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {

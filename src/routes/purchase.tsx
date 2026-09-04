@@ -15,7 +15,7 @@ const description =
 
 export const Route = createFileRoute("/purchase")({
   validateSearch: (search: Record<string, unknown>) => ({
-    plan: (search.plan === "starter" ? "starter" : "pro") as PlanId,
+    plan: (search["plan"] === "starter" ? "starter" : "pro") as PlanId,
   }),
   head: () => ({
     meta: [

@@ -51,7 +51,7 @@ export const PLANS: Plan[] = [
 ];
 
 export function getPlan(id: string | undefined | null): Plan {
-  return PLANS.find((p) => p.id === id) ?? PLANS[1];
+  return PLANS.find((p) => p.id === id) ?? PLANS[1]!;
 }
 
 export interface Customer {
