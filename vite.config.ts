@@ -1,3 +1,7 @@
+if (!process.env.NITRO_PRESET) {
+  process.env.NITRO_PRESET = "vercel";
+}
+
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import type { Plugin } from "vite";
 import { handleApiRequest } from "./src/lib/server/api-handler";
@@ -52,6 +56,9 @@ function apiDevServerPlugin(): Plugin {
 }
 
 export default defineConfig({
+  nitro: {
+    preset: process.env.VERCEL ? "vercel" : undefined,
+  },
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
