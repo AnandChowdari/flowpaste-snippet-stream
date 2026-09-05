@@ -87,6 +87,7 @@ export async function handleApiRequest(
     }
 
     const order = serverStore.createOrder(orderParams);
+    const adminUpiId = serverStore.getAdminUpiId();
     appsScriptBridge
       .createOrder({
         orderId: order.orderId,
@@ -102,7 +103,7 @@ export async function handleApiRequest(
     return {
       status: 200,
       headers: jsonHeaders,
-      body: { success: true, order },
+      body: { success: true, order, adminUpiId },
     };
   }
 
@@ -409,6 +410,23 @@ export async function handleApiRequest(
       status: success ? 200 : 404,
       headers: jsonHeaders,
       body: { success, message: success ? "Order deleted successfully" : "Order not found" },
+    };
+  }
+
+  if (pathname === "/api/admin/update-upi") {
+    const upiId = String(body?.["upiId"] || "");
+    if (!upiId || !upiId.includes("@")) {
+      return {
+        status: 400,
+        headers: jsonHeaders,
+        body: { success: false, error: "Invalid UPI ID" },
+      };
+    }
+    serverStore.setAdminUpiId(upiId);
+    return {
+      status: 200,
+      headers: jsonHeaders,
+      body: { success: true, upiId },
     };
   }
 

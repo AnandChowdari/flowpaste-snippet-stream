@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { Info, Loader2, ShieldAlert } from "lucide-react";
+import { Info, Loader2, ShieldAlert, Smartphone } from "lucide-react";
 import { toast } from "sonner";
+import { QRCodeSVG } from "qrcode.react";
 
 import { Button } from "@/components/ui/button";
 import { verifyPayment, type Order } from "@/lib/flowpaste";
-import { QrPlaceholder } from "./QrPlaceholder";
 
 export function PaymentScreen({
   order,
@@ -54,8 +54,22 @@ export function PaymentScreen({
 
       <div className="mt-6 flex flex-col items-center">
         <div className="w-full max-w-[260px] rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-soft)]">
-          <div className="aspect-square w-full">
-            <QrPlaceholder seed={order.reference} />
+          <div className="aspect-square w-full relative flex items-center justify-center bg-white rounded-xl overflow-hidden p-2">
+            {order.adminUpiId ? (
+              <QRCodeSVG 
+                value={`upi://pay?pa=${order.adminUpiId}&pn=FlowPaste%20Admin&am=${order.plan.price}&cu=INR`}
+                size={220}
+                level="Q"
+                includeMargin={false}
+                className="w-full h-full"
+              />
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center text-center text-muted-foreground text-sm border-2 border-dashed border-border rounded-lg p-4 bg-background">
+                <Smartphone className="h-8 w-8 mb-2 opacity-50" />
+                <p>QR Code not available.</p>
+                <p className="text-xs mt-2">Admin must configure their UPI ID in the dashboard.</p>
+              </div>
+            )}
           </div>
         </div>
         <p className="mt-3 text-sm font-medium">Scan with your preferred UPI app</p>
@@ -71,17 +85,7 @@ export function PaymentScreen({
       </ol>
 
       <div className="mt-5 space-y-3 rounded-xl border border-dashed border-border p-4">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-          <div className="min-w-0">
-            <p className="text-xs text-muted-foreground">Generated Order Ref</p>
-            <p className="truncate font-mono text-sm font-semibold text-primary">{order.reference}</p>
-          </div>
-          <span className="shrink-0 rounded-md bg-accent px-2 py-1 text-[0.65rem] font-semibold text-accent-foreground">
-            {order.id}
-          </span>
-        </div>
-
-        <div className="pt-2 border-t border-border/50">
+        <div>
           <label htmlFor="upi-ref" className="block text-xs font-semibold text-foreground mb-1.5">
             UPI UTR / Payment Reference ID
           </label>
@@ -93,9 +97,11 @@ export function PaymentScreen({
             onChange={(e) => setUserPaymentRef(e.target.value)}
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           />
-          <p className="mt-1 text-[11px] text-muted-foreground">
-            The admin checks this reference ID against their UPI payment to activate your account.
-          </p>
+          <div className="mt-2 rounded-md bg-destructive/10 p-2.5 border border-destructive/20">
+            <p className="text-[11px] font-medium text-destructive leading-relaxed">
+              <strong>CRITICAL:</strong> You must enter the exact 12-digit UTR or Reference ID from your payment app. We will verify this reference ID against our bank records. If it matches, only then will you receive the extension.
+            </p>
+          </div>
         </div>
       </div>
 

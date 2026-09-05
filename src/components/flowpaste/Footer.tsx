@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { Logo } from "./Logo";
 
 export function Footer() {
@@ -11,15 +12,30 @@ export function Footer() {
           </p>
         </div>
         <nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-2">
-          {["Privacy", "Terms", "Contact"].map((label) => (
-            <a
-              key={label}
-              href="#"
-              className="rounded text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-            >
-              {label}
-            </a>
-          ))}
+          <Link
+            to="/privacy"
+            className="rounded text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          >
+            Privacy Policy
+          </Link>
+          <Link
+            to="/terms"
+            className="rounded text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          >
+            Terms & Conditions
+          </Link>
+          <Link
+            to="/refund"
+            className="rounded text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          >
+            Refund Policy
+          </Link>
+          <a
+            href="mailto:support.support49@gmail.com"
+            className="rounded text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          >
+            Contact
+          </a>
         </nav>
       </div>
       <div className="border-t border-border/70">

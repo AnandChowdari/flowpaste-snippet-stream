@@ -191,3 +191,22 @@ export async function adminDeleteOrderClient(
     return { success: false, error: e?.message || "Delete failed" };
   }
 }
+
+export async function adminUpdateUpiIdClient(
+  token: string,
+  upiId: string
+): Promise<{ success: boolean; upiId?: string; error?: string }> {
+  try {
+    const res = await fetch("/api/admin/update-upi", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ upiId, token }),
+    });
+    return (await res.json()) as { success: boolean; upiId?: string; error?: string };
+  } catch (e: any) {
+    return { success: false, error: e?.message || "Failed to update UPI ID" };
+  }
+}

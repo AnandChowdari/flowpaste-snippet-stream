@@ -64,6 +64,7 @@ export interface Order {
   amount: number;
   status: OrderStatus;
   createdAt: string;
+  adminUpiId?: string;
 }
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -103,7 +104,7 @@ export async function createOrder(customer: Customer, plan: Plan): Promise<Order
       }),
     });
 
-    const result = (await res.json()) as { success?: boolean; order?: any };
+    const result = (await res.json()) as { success?: boolean; order?: any; adminUpiId?: string };
     if (result.success && result.order) {
       return {
         id: result.order.orderId,
@@ -113,6 +114,7 @@ export async function createOrder(customer: Customer, plan: Plan): Promise<Order
         amount: result.order.amount,
         status: "created",
         createdAt: result.order.createdAt,
+        adminUpiId: result.adminUpiId,
       };
     }
   } catch (err) {

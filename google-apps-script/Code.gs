@@ -29,6 +29,7 @@ var CONFIG = {
   APP_NAME: "Flow Paste",
   SUPPORT_EMAIL: "support@flowpaste.com",
   VERSION: "1.0.0",
+  FLOW_PASTE_ZIP_FILE_ID: "YOUR_FILE_ID",
 };
 
 var SHEET_NAMES = {
@@ -243,7 +244,7 @@ function applyCheckboxValidationToOrders(sheet) {
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
   ui.createMenu("FlowPaste Automation")
-    .addItem("⚡ 1-Click Install Automation Trigger (Required for Emails)", "installTriggers")
+    .addItem("⚡ Setup Email Automation (Run Once)", "setupEmailAutomation")
     .addSeparator()
     .addItem("Process / Verify Checked Orders", "processAllCheckedOrders")
     .addSeparator()
@@ -256,9 +257,6 @@ function onOpen() {
 
 /**
  * Real-time simple trigger when Admin clicks/toggles the checkbox in Google Sheets.
- * NOTE: Simple triggers cannot send emails due to Google security policies.
- * For automatic email delivery, install the installable trigger via menu:
- * "FlowPaste Automation" -> "⚡ 1-Click Install Automation Trigger"
  */
 function onEdit(e) {
   if (!e || !e.range) return;
@@ -279,139 +277,50 @@ function onEdit(e) {
 }
 
 /**
- * Installable trigger handler with full execution permissions (can send emails).
+ * Handle checkbox edit: ONLY state transition, NO license/email creation here.
  */
-function installedOnEdit(e) {
-  if (!e || !e.range) return;
-  try {
-    var sheet = e.range.getSheet();
-    var sheetName = sheet.getName();
-    var row = e.range.getRow();
-    var col = e.range.getColumn();
-
-    if (sheetName === SHEET_NAMES.ORDERS && col === 8 && row > 1) {
-      var val = e.range.getValue();
-      var isVerified = val === true || String(val).toUpperCase() === "TRUE";
-      processCheckboxEdit(row, isVerified, "Google Sheet Checkbox (Installable Trigger)");
-    }
-  } catch (err) {
-    Logger.log("installedOnEdit error: " + err);
-  }
-}
-
 function processCheckboxEdit(ordRowIdx, isVerified, adminLabel) {
   try {
     var ordSheet = getOrdersSheet();
-    var licSheet = getLicenseSheet();
-    if (!ordSheet || !licSheet) {
-      Logger.log(
-        "processCheckboxEdit: Could not get sheets. ordSheet=" + ordSheet + " licSheet=" + licSheet,
-      );
-      return;
-    }
+    if (!ordSheet) return;
 
     var ordValues = ordSheet.getRange(ordRowIdx, 1, 1, ORD_COL.TOTAL).getValues()[0];
     var curOrderId = String(ordValues[0] || "").trim();
-    var custName = String(ordValues[1] || "").trim();
-    var email = normalizeEmail(ordValues[2] || "");
     var curRefId = String(ordValues[3] || "").trim();
     var existingLicenseId = String(ordValues[8] || "").trim();
-    var credentialsSentAt = String(ordValues[11] || "").trim();
     var now = new Date().toISOString();
 
     if (isVerified) {
-      // 1. Checkbox checked -> PROVISION LICENSE & ACTIVATE
-      var licRowIdx = -1;
-      var targetLicId = existingLicenseId;
-      var targetLicKey = "";
-
-      if (targetLicId) {
-        licRowIdx = findLicenseRowById(licSheet, targetLicId);
-      }
-      if (licRowIdx === -1 && email) {
-        licRowIdx = findLicenseRowByEmail(licSheet, email);
-        if (licRowIdx !== -1) {
-          var existingLicVals = licSheet.getRange(licRowIdx, 1, 1, 11).getValues()[0];
-          targetLicId = String(existingLicVals[0]);
-        }
-      }
-
-      if (licRowIdx !== -1) {
-        var licValues = licSheet.getRange(licRowIdx, 1, 1, 11).getValues()[0];
-        targetLicKey = String(licValues[3]);
-        var currentLicStatus = String(licValues[6]).toUpperCase();
-        if (currentLicStatus !== "REVOKED") {
-          licSheet.getRange(licRowIdx, 7).setValue("ACTIVE");
-        }
-      } else {
-        targetLicId = generateNextLicenseId(licSheet);
-        targetLicKey = generateUniqueLicenseKey(licSheet);
-        var newLicRow = [
-          targetLicId,
-          custName,
-          email,
-          targetLicKey,
-          "",
-          1,
-          "ACTIVE",
-          now,
-          "",
-          "",
-          CONFIG.VERSION,
-        ];
-        licSheet.appendRow(newLicRow);
-      }
-
-      // Update Orders sheet: Set Payment Status to ACTIVE
-      ordSheet.getRange(ordRowIdx, ORD_COL.PAYMENT_STATUS).setValue("ACTIVE");
+      // Admin checked the box: Mark as PAID, QUEUED for processing.
+      ordSheet.getRange(ordRowIdx, ORD_COL.PAYMENT_STATUS).setValue("PAID");
       ordSheet.getRange(ordRowIdx, ORD_COL.PAYMENT_VERIFIED).setValue(true);
-      ordSheet.getRange(ordRowIdx, ORD_COL.LICENSE_ID).setValue(targetLicId);
+      
+      var emailDeliveryStatus = String(ordValues[ORD_COL.EMAIL_DELIVERY_STATUS - 1] || "");
+      if (emailDeliveryStatus !== "SENT") {
+        ordSheet.getRange(ordRowIdx, ORD_COL.EMAIL_DELIVERY_STATUS).setValue("QUEUED");
+      }
+      
       ordSheet.getRange(ordRowIdx, ORD_COL.VERIFIED_AT).setValue(now);
       ordSheet.getRange(ordRowIdx, ORD_COL.UPDATED_AT).setValue(now);
-
-      // Attach License Key as note on License ID cell so admin can hover and see credentials directly
-      try {
-        ordSheet.getRange(ordRowIdx, ORD_COL.LICENSE_ID).setNote("License Key: " + targetLicKey + "\nStatus: ACTIVE");
-      } catch (nErr) {}
-
-      SpreadsheetApp.flush();
-
-      // Email dispatch (safe try-catch so sheet write is never blocked)
-      if (!credentialsSentAt) {
-        try {
-          sendCredentialsEmail(custName, email, targetLicId, targetLicKey);
-          ordSheet.getRange(ordRowIdx, ORD_COL.CREDENTIALS_SENT_AT).setValue(now);
-          ordSheet.getRange(ordRowIdx, ORD_COL.EMAIL_DELIVERY_STATUS).setValue("SENT");
-          ordSheet.getRange(ordRowIdx, ORD_COL.EMAIL_ERROR).setValue("");
-        } catch (emErr) {
-          var errMsg = String(emErr);
-          if (errMsg.indexOf("permission") !== -1 || errMsg.indexOf("MailApp") !== -1) {
-            errMsg = "Run 'FlowPaste Automation' -> '⚡ 1-Click Install Automation Trigger' to authorize automatic email delivery.";
-          }
-          ordSheet.getRange(ordRowIdx, ORD_COL.EMAIL_DELIVERY_STATUS).setValue("FAILED");
-          ordSheet.getRange(ordRowIdx, ORD_COL.EMAIL_ERROR).setValue(errMsg);
-          Logger.log("sendCredentialsEmail failed: " + errMsg);
-        }
-      }
 
       logAuditRecord(
         adminLabel || "Google Sheet Admin",
         "PAYMENT_VERIFIED",
         curOrderId,
         curRefId,
-        targetLicId,
+        existingLicenseId,
         "UNACTIVE",
-        "ACTIVE",
-        "Payment verified via checkbox. License " + targetLicId + " provisioned.",
+        "PAID",
+        "Payment verified via checkbox. Queued for automatic processing."
       );
-      SpreadsheetApp.flush();
     } else {
-      // 2. Checkbox unchecked -> REVERT PAYMENT STATUS TO UNACTIVE & SUSPEND LICENSE
+      // Admin unchecked the box: Revert to UNACTIVE
       ordSheet.getRange(ordRowIdx, ORD_COL.PAYMENT_STATUS).setValue("UNACTIVE");
       ordSheet.getRange(ordRowIdx, ORD_COL.PAYMENT_VERIFIED).setValue(false);
       ordSheet.getRange(ordRowIdx, ORD_COL.UPDATED_AT).setValue(now);
 
       if (existingLicenseId) {
+        var licSheet = getLicenseSheet();
         var licRowIdx2 = findLicenseRowById(licSheet, existingLicenseId);
         if (licRowIdx2 !== -1) {
           var curStatus = String(licSheet.getRange(licRowIdx2, 7).getValue()).toUpperCase();
@@ -429,58 +338,146 @@ function processCheckboxEdit(ordRowIdx, isVerified, adminLabel) {
         existingLicenseId,
         "ACTIVE",
         "UNACTIVE",
-        "Payment unverified via checkbox.",
+        "Payment unverified via checkbox."
       );
-      SpreadsheetApp.flush();
     }
+    SpreadsheetApp.flush();
   } catch (err) {
     Logger.log("processCheckboxEdit error: " + err);
   }
 }
 
 /**
- * Menu helper to process/verify all rows in Orders that have checkbox = TRUE
- * but no License ID or unsent email yet.
+ * Setup Email Automation: Installs exactly ONE time-driven trigger.
  */
-function processAllCheckedOrders() {
-  var ordSheet = getOrdersSheet();
-  var lastRow = ordSheet.getLastRow();
-  if (lastRow <= 1) return;
-
-  var count = 0;
-  for (var r = 2; r <= lastRow; r++) {
-    var isChecked = Boolean(ordSheet.getRange(r, ORD_COL.PAYMENT_VERIFIED).getValue());
-    var hasLic = String(ordSheet.getRange(r, ORD_COL.LICENSE_ID).getValue() || "").trim();
-    var emailStatus = String(ordSheet.getRange(r, ORD_COL.EMAIL_DELIVERY_STATUS).getValue() || "").trim();
-    if (isChecked && (!hasLic || emailStatus !== "SENT")) {
-      processCheckboxEdit(r, true, "Batch Verify Menu");
-      count++;
-    }
-  }
-  SpreadsheetApp.getActiveSpreadsheet().toast(
-    "Processed " + count + " verified orders.",
-    "FlowPaste",
-    5,
-  );
-}
-
-function installTriggers() {
+function setupEmailAutomation() {
   var ss = getSpreadsheet();
   var triggers = ScriptApp.getUserTriggers(ss);
+  
+  // Clean up any old triggers
   for (var i = 0; i < triggers.length; i++) {
     var fn = triggers[i].getHandlerFunction();
-    if (fn === "onEdit" || fn === "installedOnEdit") {
+    if (fn === "processVerifiedOrders" || fn === "installedOnEdit") {
       ScriptApp.deleteTrigger(triggers[i]);
     }
   }
-  ScriptApp.newTrigger("installedOnEdit").forSpreadsheet(ss).onEdit().create();
-  Logger.log("Installable onEdit trigger created successfully.");
+  
+  // Create exactly one time-driven trigger every 1 minute
+  ScriptApp.newTrigger("processVerifiedOrders")
+    .timeBased()
+    .everyMinutes(1)
+    .create();
+    
+  Logger.log("processVerifiedOrders time-driven trigger created successfully.");
   SpreadsheetApp.getActiveSpreadsheet().toast(
-    "✅ Automation trigger installed! Checkbox edits will now send emails automatically.",
+    "✅ Automation trigger installed! Emails will be sent automatically every 1 minute.",
     "FlowPaste",
-    8,
+    8
   );
-  return { success: true, message: "Installable trigger active." };
+  return { success: true, message: "Time-driven trigger active." };
+}
+
+/**
+ * Time-driven processor: runs every minute to provision licenses and send emails.
+ */
+function processVerifiedOrders() {
+  var ordSheet = getOrdersSheet();
+  var lastRow = ordSheet.getLastRow();
+  if (lastRow <= 1) return;
+  
+  var ordData = ordSheet.getRange(2, 1, lastRow - 1, ORD_COL.TOTAL).getValues();
+  
+  for (var i = 0; i < ordData.length; i++) {
+    var rowIdx = i + 2;
+    var rowValues = ordData[i];
+    
+    var paymentStatus = String(rowValues[ORD_COL.PAYMENT_STATUS - 1] || "").toUpperCase();
+    var paymentVerified = Boolean(rowValues[ORD_COL.PAYMENT_VERIFIED - 1]);
+    var credentialsSentAt = String(rowValues[ORD_COL.CREDENTIALS_SENT_AT - 1] || "").trim();
+    var emailDeliveryStatus = String(rowValues[ORD_COL.EMAIL_DELIVERY_STATUS - 1] || "").trim().toUpperCase();
+    
+    // Condition: PAID, Verified=TRUE, SentAt=EMPTY, Status != SENT
+    if (paymentStatus === "PAID" && paymentVerified && !credentialsSentAt && emailDeliveryStatus !== "SENT") {
+      
+      var lock = LockService.getScriptLock();
+      try {
+        if (!lock.tryLock(10000)) continue; // Skip to next if locked by another execution
+        
+        // Re-read row after lock to prevent duplicate processing
+        var freshRow = ordSheet.getRange(rowIdx, 1, 1, ORD_COL.TOTAL).getValues()[0];
+        if (String(freshRow[ORD_COL.CREDENTIALS_SENT_AT - 1]).trim() || 
+            String(freshRow[ORD_COL.EMAIL_DELIVERY_STATUS - 1]).toUpperCase() === "SENT") {
+          lock.releaseLock();
+          continue; // Already processed
+        }
+        
+        var curOrderId = String(freshRow[ORD_COL.ORDER_ID - 1]);
+        var custName = String(freshRow[ORD_COL.CUSTOMER_NAME - 1]);
+        var email = normalizeEmail(freshRow[ORD_COL.EMAIL - 1]);
+        var existingLicenseId = String(freshRow[ORD_COL.LICENSE_ID - 1] || "").trim();
+        var now = new Date().toISOString();
+        
+        var licSheet = getLicenseSheet();
+        var targetLicId = existingLicenseId;
+        var targetLicKey = "";
+        
+        if (!targetLicId) {
+          // Check if customer already has a license
+          var existingLicRow = findLicenseRowByEmail(licSheet, email);
+          if (existingLicRow !== -1) {
+            targetLicId = String(licSheet.getRange(existingLicRow, 1).getValue());
+          }
+        }
+        
+        if (targetLicId) {
+          var licRowIdx = findLicenseRowById(licSheet, targetLicId);
+          if (licRowIdx !== -1) {
+            var licValues = licSheet.getRange(licRowIdx, 1, 1, 11).getValues()[0];
+            targetLicKey = String(licValues[3]);
+            if (String(licValues[6]).toUpperCase() !== "REVOKED") {
+              licSheet.getRange(licRowIdx, 7).setValue("ACTIVE");
+            }
+          }
+        } else {
+          targetLicId = generateNextLicenseId(licSheet);
+          targetLicKey = generateUniqueLicenseKey(licSheet);
+          var newLicRow = [
+            targetLicId, custName, email, targetLicKey, "", 1, "ACTIVE", now, "", "", CONFIG.VERSION
+          ];
+          licSheet.appendRow(newLicRow);
+        }
+        
+        ordSheet.getRange(rowIdx, ORD_COL.LICENSE_ID).setValue(targetLicId);
+        ordSheet.getRange(rowIdx, ORD_COL.EMAIL_DELIVERY_STATUS).setValue("PROCESSING");
+        SpreadsheetApp.flush();
+        
+        logAuditRecord("System Queue", "LICENSE_CREATED", curOrderId, "", targetLicId, "UNACTIVE", "ACTIVE", "License provisioned.");
+        
+        try {
+          sendCredentialsEmail(custName, email, targetLicId, targetLicKey);
+          
+          var finishTime = new Date().toISOString();
+          ordSheet.getRange(rowIdx, ORD_COL.CREDENTIALS_SENT_AT).setValue(finishTime);
+          ordSheet.getRange(rowIdx, ORD_COL.EMAIL_DELIVERY_STATUS).setValue("SENT");
+          ordSheet.getRange(rowIdx, ORD_COL.EMAIL_ERROR).setValue("");
+          
+          try { ordSheet.getRange(rowIdx, ORD_COL.LICENSE_ID).setNote("License Key: " + targetLicKey + "\nStatus: ACTIVE"); } catch(e){}
+          
+          logAuditRecord("System Queue", "CREDENTIAL_EMAIL_SENT", curOrderId, "", targetLicId, "PROCESSING", "SENT", "Credentials and ZIP delivered.");
+        } catch (emErr) {
+          ordSheet.getRange(rowIdx, ORD_COL.EMAIL_DELIVERY_STATUS).setValue("FAILED");
+          ordSheet.getRange(rowIdx, ORD_COL.EMAIL_ERROR).setValue(emErr.toString());
+          logAuditRecord("System Queue", "EMAIL_SEND_FAILED", curOrderId, "", targetLicId, "PROCESSING", "FAILED", "Error: " + emErr.toString());
+        }
+        SpreadsheetApp.flush();
+        
+      } catch (e) {
+        Logger.log("processVerifiedOrders error on row " + rowIdx + ": " + e);
+      } finally {
+        lock.releaseLock();
+      }
+    }
+  }
 }
 
 // ── 2. HTTP Web App Router ───────────────────────────────────────────────────
@@ -1033,192 +1030,54 @@ function handleVerifyPayment(data, adminUser) {
   var refId = String(data.paymentReferenceId || "").trim();
 
   var lock = LockService.getScriptLock();
-  try {
-    lock.waitLock(30000);
-  } catch (e) {
-    return jsonResponse({ success: false, error: "System lock busy. Please retry." });
-  }
+  lock.waitLock(25000);
 
   try {
     var ordSheet = getOrdersSheet();
     var ordRowIdx = -1;
-    if (orderId) {
-      ordRowIdx = findOrderRowById(ordSheet, orderId);
-    } else if (refId) {
-      ordRowIdx = findOrderRowByRef(ordSheet, refId);
-    }
+    if (orderId) ordRowIdx = findOrderRowById(ordSheet, orderId);
+    else if (refId) ordRowIdx = findOrderRowByRef(ordSheet, refId);
 
     if (ordRowIdx === -1) {
-      Logger.log("handleVerifyPayment: Order not found. orderId=" + orderId + " refId=" + refId);
       return jsonResponse({ success: false, error: "Order not found." });
     }
 
     var ordValues = ordSheet.getRange(ordRowIdx, 1, 1, ORD_COL.TOTAL).getValues()[0];
     var curOrderId = String(ordValues[0]);
-    var custName = String(ordValues[1]);
-    var email = normalizeEmail(ordValues[2]);
     var curRefId = String(ordValues[3]);
     var existingLicenseId = String(ordValues[8] || "").trim();
-    var credentialsSentAt = String(ordValues[11] || "").trim();
     var now = new Date().toISOString();
 
-    Logger.log(
-      "handleVerifyPayment: Processing orderId=" +
-        curOrderId +
-        " email=" +
-        email +
-        " existingLicenseId=" +
-        existingLicenseId,
-    );
-
-    var licSheet = getLicenseSheet();
-    var licRowIdx = -1;
-    var targetLicId = existingLicenseId;
-    var targetLicKey = "";
-
-    // 1. Check if license already exists for this order
-    if (targetLicId) {
-      licRowIdx = findLicenseRowById(licSheet, targetLicId);
-      Logger.log("handleVerifyPayment: findLicenseRowById(" + targetLicId + ") = " + licRowIdx);
-    }
-
-    // 2. Also check if an active license already exists for this customer email
-    if (licRowIdx === -1 && email) {
-      licRowIdx = findLicenseRowByEmail(licSheet, email);
-      Logger.log("handleVerifyPayment: findLicenseRowByEmail(" + email + ") = " + licRowIdx);
-      if (licRowIdx !== -1) {
-        var existingLicVals = licSheet.getRange(licRowIdx, 1, 1, 11).getValues()[0];
-        targetLicId = String(existingLicVals[0]);
-      }
-    }
-
-    if (licRowIdx !== -1) {
-      // License exists -> REUSE IT (Never create duplicate license!)
-      var licValues = licSheet.getRange(licRowIdx, 1, 1, 11).getValues()[0];
-      targetLicKey = String(licValues[3]);
-      var currentLicStatus = String(licValues[6]).toUpperCase();
-      Logger.log(
-        "handleVerifyPayment: Reusing license " + targetLicId + " status=" + currentLicStatus,
-      );
-
-      // Do NOT automatically reactivate a REVOKED license!
-      if (currentLicStatus !== "REVOKED") {
-        licSheet.getRange(licRowIdx, 7).setValue("ACTIVE");
-        SpreadsheetApp.flush();
-      }
-    } else {
-      // Generate exactly ONE new license: LIC-000001 format + XXXX-XXXX-XXXX-XXXX key
-      targetLicId = generateNextLicenseId(licSheet);
-      targetLicKey = generateUniqueLicenseKey(licSheet);
-      Logger.log(
-        "handleVerifyPayment: Creating NEW license " +
-          targetLicId +
-          " key=" +
-          targetLicKey +
-          " for " +
-          email,
-      );
-
-      var newLicRow = [
-        targetLicId,
-        custName,
-        email,
-        targetLicKey,
-        "",
-        1,
-        "ACTIVE",
-        now,
-        "",
-        "",
-        CONFIG.VERSION,
-      ];
-      licSheet.appendRow(newLicRow);
-      SpreadsheetApp.flush();
-      Logger.log(
-        "handleVerifyPayment: appendRow done. licSheet.getLastRow()=" + licSheet.getLastRow(),
-      );
-    }
-
-    // Update Orders sheet: Set Payment Status = ACTIVE, Payment Verified = TRUE
-    ordSheet.getRange(ordRowIdx, ORD_COL.PAYMENT_STATUS).setValue("ACTIVE");
+    ordSheet.getRange(ordRowIdx, ORD_COL.PAYMENT_STATUS).setValue("PAID");
     ordSheet.getRange(ordRowIdx, ORD_COL.PAYMENT_VERIFIED).setValue(true);
-    ordSheet.getRange(ordRowIdx, ORD_COL.LICENSE_ID).setValue(targetLicId);
+    
+    var emailDeliveryStatus = String(ordValues[ORD_COL.EMAIL_DELIVERY_STATUS - 1] || "");
+    if (emailDeliveryStatus !== "SENT") {
+      ordSheet.getRange(ordRowIdx, ORD_COL.EMAIL_DELIVERY_STATUS).setValue("QUEUED");
+    }
+
     ordSheet.getRange(ordRowIdx, ORD_COL.VERIFIED_AT).setValue(now);
     ordSheet.getRange(ordRowIdx, ORD_COL.UPDATED_AT).setValue(now);
-    try {
-      ordSheet.getRange(ordRowIdx, ORD_COL.LICENSE_ID).setNote("License Key: " + targetLicKey + "\nStatus: ACTIVE");
-    } catch (nErr) {}
-    SpreadsheetApp.flush();
-    Logger.log("handleVerifyPayment: Orders row updated for " + curOrderId);
-
-    // Duplicate Email Prevention: Only send automatic email if NOT already sent
-    var emailSent = false;
-    var emailDeliveryStatus = "PENDING";
-    var emailError = "";
-
-    if (!credentialsSentAt) {
-      try {
-        sendCredentialsEmail(custName, email, targetLicId, targetLicKey);
-        ordSheet.getRange(ordRowIdx, ORD_COL.CREDENTIALS_SENT_AT).setValue(now);
-        ordSheet.getRange(ordRowIdx, ORD_COL.EMAIL_DELIVERY_STATUS).setValue("SENT");
-        ordSheet.getRange(ordRowIdx, ORD_COL.EMAIL_ERROR).setValue("");
-        emailSent = true;
-        emailDeliveryStatus = "SENT";
-        Logger.log("handleVerifyPayment: Email sent to " + email);
-        logAuditRecord(
-          adminUser,
-          "CREDENTIALS_SENT",
-          curOrderId,
-          curRefId,
-          targetLicId,
-          null,
-          "SENT",
-          "Credentials email sent to " + email,
-        );
-      } catch (emErr) {
-        Logger.log("handleVerifyPayment: EMAIL FAILED: " + emErr);
-        emailError = emErr.toString();
-        ordSheet.getRange(ordRowIdx, ORD_COL.EMAIL_DELIVERY_STATUS).setValue("FAILED");
-        ordSheet.getRange(ordRowIdx, ORD_COL.EMAIL_ERROR).setValue(emailError);
-        emailDeliveryStatus = "FAILED";
-        logAuditRecord(
-          adminUser,
-          "EMAIL_SEND_FAILED",
-          curOrderId,
-          curRefId,
-          targetLicId,
-          null,
-          null,
-          "Email delivery failed: " + emailError,
-        );
-      }
-    } else {
-      Logger.log("handleVerifyPayment: Email skip (already sent " + credentialsSentAt + ")");
-    }
 
     logAuditRecord(
       adminUser,
       "PAYMENT_VERIFIED",
       curOrderId,
       curRefId,
-      targetLicId,
-      "PENDING",
-      "ACTIVE",
-      "Payment manually verified by admin. License " + targetLicId + " provisioned.",
+      existingLicenseId,
+      "UNACTIVE",
+      "PAID",
+      "Payment verified manually via console. Queued for background processing."
     );
 
     SpreadsheetApp.flush();
 
     return jsonResponse({
       success: true,
-      message: "Payment verified successfully. License provisioned.",
+      message: "Payment verified successfully. Order is queued for background processing.",
       orderId: curOrderId,
       paymentVerified: true,
-      licenseId: targetLicId,
-      licenseKey: targetLicKey,
-      emailSent: emailSent,
-      emailDeliveryStatus: emailDeliveryStatus,
-      emailError: emailError,
+      emailDeliveryStatus: emailDeliveryStatus !== "SENT" ? "QUEUED" : "SENT"
     });
   } finally {
     lock.releaseLock();
@@ -1654,6 +1513,12 @@ function handleGetAuditLogs() {
 // ── 6. Customer Credentials Email ─────────────────────────────────────────────
 function sendCredentialsEmail(name, toEmail, licenseId, licenseKey) {
   var subject = "Your Flow Paste License is Ready";
+  
+  if (!CONFIG.FLOW_PASTE_ZIP_FILE_ID || CONFIG.FLOW_PASTE_ZIP_FILE_ID === "YOUR_FILE_ID") {
+    throw new Error("FLOW_PASTE_ZIP_FILE_ID is not configured in CONFIG. Please add your Google Drive file ID.");
+  }
+  var downloadLink = "https://drive.google.com/file/d/" + CONFIG.FLOW_PASTE_ZIP_FILE_ID + "/view?usp=sharing";
+
   var body = [
     "Hello " + (name || "there") + ",\n\n",
     "Thank you for purchasing Flow Paste!\n",
@@ -1664,21 +1529,24 @@ function sendCredentialsEmail(name, toEmail, licenseId, licenseKey) {
     "License ID       : " + licenseId + "\n",
     "Maximum Devices  : 1 Device\n",
     "────────────────────────────────────────────────────────\n\n",
-    "Quick Setup Instructions:\n",
-    "1. Open Google Chrome and click the Flow Paste extension icon.\n",
-    "2. Enter your registered email: " + toEmail + "\n",
-    "3. Enter your License Key: " + licenseKey + "\n",
-    '4. Click "Activate". Your current device will be bound automatically.\n',
-    "5. Use Alt+Q on CodeChef or paste your snippets instantly!\n\n",
+    "How to Install & Setup Flow Paste:\n",
+    "1. Download the extension ZIP file here:\n   " + downloadLink + "\n",
+    "2. Extract (unzip) the downloaded file to a folder on your computer.\n",
+    "3. Open Google Chrome and go to chrome://extensions/ in your URL bar.\n",
+    "4. Turn on 'Developer mode' using the toggle in the top-right corner.\n",
+    "5. Click 'Load unpacked' in the top-left and select the folder you extracted in Step 2.\n",
+    "6. Click the Extensions 'puzzle piece' icon in Chrome (top right) and pin Flow Paste.\n",
+    "7. Click the Flow Paste icon, enter your Email and License Key, and click 'Activate'.\n",
+    "8. Use Alt+Q on CodeChef or paste your snippets instantly!\n\n",
     "Need assistance? Reply directly to this email.\n\n",
-    "Best regards,\nFlow Paste Team",
+    "Best regards,\nFlow Paste Team"
   ].join("");
 
   MailApp.sendEmail({
     to: toEmail,
     subject: subject,
     body: body,
-    name: "Flow Paste",
+    name: "Flow Paste"
   });
 }
 

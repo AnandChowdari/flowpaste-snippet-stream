@@ -153,6 +153,23 @@ export const adminRevokeLicenseFn = createServerFn({ method: "POST" })
   });
 
 /**
+ * Update Admin UPI ID
+ */
+export const adminUpdateUpiIdFn = createServerFn({ method: "POST" })
+  .validator((d: { token: string | null | undefined; upiId: string }) => d)
+  .handler(async ({ data }) => {
+    const session = verifySessionToken(data.token);
+    if (!session) {
+      return { success: false, error: "Unauthorized" };
+    }
+    if (!data.upiId || !data.upiId.includes("@")) {
+      return { success: false, error: "Invalid UPI ID format" };
+    }
+    serverStore.setAdminUpiId(data.upiId);
+    return { success: true, upiId: data.upiId };
+  });
+
+/**
  * Public Checkout: Create Order
  */
 export const checkoutCreateOrderFn = createServerFn({ method: "POST" })
@@ -168,7 +185,8 @@ export const checkoutCreateOrderFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const order = serverStore.createOrder(data);
-    return { success: true, order };
+    const adminUpiId = serverStore.getAdminUpiId();
+    return { success: true, order, adminUpiId };
   });
 
 /**

@@ -39,6 +39,7 @@ import {
   adminResetDeviceClient,
   adminRevokeLicenseClient,
   adminDeleteOrderClient,
+  adminUpdateUpiIdClient,
 } from "@/lib/admin-client";
 import type { OrderWithLicense, StoredAuditLog, DashboardMetrics } from "@/lib/flowpaste-types";
 
@@ -75,6 +76,10 @@ export function AdminConsolePage() {
   const [filterTab, setFilterTab] = useState<"all" | "pending" | "verified" | "revoked">("all");
   const [activeView, setActiveView] = useState<"orders" | "audit">("orders");
 
+  // UPI settings
+  const [adminUpiInput, setAdminUpiInput] = useState("");
+  const [isUpdatingUpi, setIsUpdatingUpi] = useState(false);
+
   // Per-order pending operation state to prevent duplicate clicks
   const [actionInProgress, setActionInProgress] = useState<Record<string, boolean>>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -110,7 +115,12 @@ export function AdminConsolePage() {
       if (res.success && res.orders) {
         setOrders(res.orders);
         setAuditLogs(res.auditLogs || []);
-        if (res.metrics) setMetrics(res.metrics);
+        if (res.metrics) {
+          setMetrics(res.metrics);
+          if (res.metrics.adminUpiId) {
+            setAdminUpiInput(res.metrics.adminUpiId);
+          }
+        }
         setLastRefreshed(new Date());
       } else {
         toast.error(res.error || "Failed to load dashboard data");
@@ -298,6 +308,28 @@ export function AdminConsolePage() {
     setTimeout(() => setCopiedId(null), 2000);
   }
 
+  async function handleUpdateUpiId() {
+    if (!token || !adminUpiInput.trim()) return;
+    if (!adminUpiInput.includes("@")) {
+      toast.error("Please enter a valid UPI ID (must contain @)");
+      return;
+    }
+    setIsUpdatingUpi(true);
+    try {
+      const res = await adminUpdateUpiIdClient(token, adminUpiInput.trim());
+      if (res.success && res.upiId) {
+        toast.success("Payment UPI ID updated successfully");
+        setAdminUpiInput(res.upiId);
+      } else {
+        toast.error(res.error || "Failed to update UPI ID");
+      }
+    } catch {
+      toast.error("An error occurred while updating UPI ID");
+    } finally {
+      setIsUpdatingUpi(false);
+    }
+  }
+
   // ── Filtered Orders ────────────────────────────────────────────────────────
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
@@ -455,6 +487,37 @@ export function AdminConsolePage() {
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        {/* UPI Settings Card */}
+        <div className="mb-6 rounded-xl border border-lime-500/30 bg-slate-900/60 p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                <Smartphone className="h-4 w-4 text-lime-400" />
+                Payment QR Code Settings
+              </h3>
+              <p className="text-xs text-slate-400 mt-1">
+                Enter your UPI ID to dynamically generate the QR code on the checkout screen.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                placeholder="yourupi@bank"
+                value={adminUpiInput}
+                onChange={(e) => setAdminUpiInput(e.target.value)}
+                className="w-full sm:w-64 rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-1.5 text-sm text-white placeholder-slate-500 focus:border-lime-400 focus:outline-none"
+              />
+              <Button
+                onClick={handleUpdateUpiId}
+                disabled={isUpdatingUpi}
+                className="rounded-lg bg-lime-400 text-slate-950 hover:bg-lime-300 px-4 h-9"
+              >
+                {isUpdatingUpi ? "Saving..." : "Save UPI"}
+              </Button>
+            </div>
+          </div>
+        </div>
+
         {/* KPI Metrics */}
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">

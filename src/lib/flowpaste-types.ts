@@ -72,6 +72,7 @@ export interface AppStoreData {
   auditLogs: StoredAuditLog[];
   emailLogs: StoredEmailLog[];
   nextLicenseSeq: number;
+  adminUpiId?: string;
 }
 
 export interface DashboardMetrics {
@@ -79,6 +80,7 @@ export interface DashboardMetrics {
   pendingVerificationCount: number;
   activeLicensesCount: number;
   totalRevenue: number;
+  adminUpiId?: string;
 }
 
 export interface OrderWithLicense extends StoredOrder {
