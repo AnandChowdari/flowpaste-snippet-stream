@@ -121,8 +121,19 @@ export async function handleApiRequest(
       };
     }
     appsScriptBridge
-      .updatePaymentStatus(order.orderId, order.paymentReferenceId, "UNACTIVE")
-      .catch((e) => console.error("[AppsScript Sync] updatePaymentStatus error:", e));
+      .deleteOrder(order.orderId)
+      .then(() => {
+        return appsScriptBridge.createOrder({
+          orderId: order.orderId,
+          customerName: order.customerName,
+          email: order.email,
+          paymentReferenceId: order.paymentReferenceId,
+          amount: order.amount,
+          currency: order.currency,
+          paymentStatus: order.paymentStatus,
+        });
+      })
+      .catch((e) => console.error("[AppsScript Sync] update UTR error:", e));
 
     return {
       status: 200,

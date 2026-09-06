@@ -21,7 +21,7 @@ const INITIAL_STORE: AppStoreData = {
   auditLogs: [],
   emailLogs: [],
   nextLicenseSeq: 1,
-  adminUpiId: "yourupi@paytm",
+  adminUpiId: "9059845699@fam",
 };
 
 function readStore(): AppStoreData {
@@ -39,7 +39,7 @@ function readStore(): AppStoreData {
       auditLogs: Array.isArray(parsed.auditLogs) ? parsed.auditLogs : [],
       emailLogs: Array.isArray(parsed.emailLogs) ? parsed.emailLogs : [],
       nextLicenseSeq: typeof parsed.nextLicenseSeq === "number" ? parsed.nextLicenseSeq : 1,
-      adminUpiId: typeof parsed.adminUpiId === "string" ? parsed.adminUpiId : "yourupi@paytm",
+      adminUpiId: typeof parsed.adminUpiId === "string" ? parsed.adminUpiId : "9059845699@fam",
     };
   } catch (err) {
     console.error("[Store] Error reading store.json:", err);
@@ -161,7 +161,7 @@ function recordEmailLog(
 
 export const serverStore = {
   getAdminUpiId(): string {
-    return readStore().adminUpiId || "yourupi@paytm";
+    return readStore().adminUpiId || "9059845699@fam";
   },
 
   setAdminUpiId(upiId: string): void {
@@ -227,7 +227,7 @@ export const serverStore = {
       totalRevenue: store.orders
         .filter((o) => o.paymentVerified || o.paymentStatus === "ACTIVE" || o.paymentStatus === "PAID")
         .reduce((sum, o) => sum + (o.amount || 0), 0),
-      adminUpiId: store.adminUpiId || "yourupi@paytm",
+      adminUpiId: store.adminUpiId || "9059845699@fam",
     };
 
     return {
