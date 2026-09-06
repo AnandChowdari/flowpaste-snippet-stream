@@ -16,8 +16,8 @@ export const PLANS: Plan[] = [
   {
     id: "starter",
     name: "Starter",
-    price: 49,
-    priceLabel: `₹49 - ₹70`,
+    price: 29,
+    priceLabel: `₹29 - ₹69`,
     blurb: "The core copy-paste workflow, without the AI extras.",
     features: [
       "FlowPaste extension",
@@ -75,7 +75,7 @@ export async function generatePaymentReference(): Promise<string> {
 
 /** Create the order row in backend (Google Sheets / Store) */
 export async function createOrder(customer: Customer, plan: Plan): Promise<Order> {
-  const dynamicPrice = Math.floor(Math.random() * (70 - 49 + 1)) + 49;
+  const dynamicPrice = Math.floor(Math.random() * (69 - 29 + 1)) + 29;
   try {
     const res = await fetch("/api/orders/create", {
       method: "POST",
