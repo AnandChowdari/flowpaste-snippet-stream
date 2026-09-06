@@ -16,13 +16,19 @@ export function PaymentScreen({
   onBack: () => void;
 }) {
   const [submitting, setSubmitting] = useState(false);
-  const [userPaymentRef, setUserPaymentRef] = useState(order.reference);
+  const [userPaymentRef, setUserPaymentRef] = useState("");
 
   async function handleConfirm() {
     if (submitting) return;
+    
+    if (!userPaymentRef.trim()) {
+      toast.error("Please enter your UPI Reference ID/UTR before submitting.");
+      return;
+    }
+
     setSubmitting(true);
     try {
-      const result = await verifyPayment(order, userPaymentRef.trim() || order.reference);
+      const result = await verifyPayment(order, userPaymentRef.trim());
       toast.success("Payment submitted", {
         description: "Admin will verify your reference ID and activate your credentials.",
       });

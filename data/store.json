@@ -1,6 +1,23 @@
 {
   "orders": [
     {
+      "orderId": "ORD-11834546",
+      "customerName": "Yuvaraj Gummudu",
+      "email": "yuvarajgummudu2266@gmail.com",
+      "paymentReferenceId": "PAY-20260906-A34F9B",
+      "amount": 47,
+      "currency": "INR",
+      "planId": "starter",
+      "planName": "Starter",
+      "paymentStatus": "UNACTIVE",
+      "paymentVerified": false,
+      "licenseId": null,
+      "createdAt": "2026-09-06T08:32:24.591Z",
+      "verifiedAt": null,
+      "credentialsSentAt": null,
+      "emailDeliveryStatus": "PENDING"
+    },
+    {
       "orderId": "ORD-21566322",
       "customerName": "Yuvaraj Gummudu",
       "email": "yuvarajgummudu2266@gmail.com",
@@ -166,6 +183,18 @@
     }
   ],
   "auditLogs": [
+    {
+      "id": "AUD-1788683544591-785",
+      "timestamp": "2026-09-06T08:32:24.591Z",
+      "adminUser": "customer",
+      "action": "CREATE_ORDER",
+      "orderId": "ORD-11834546",
+      "paymentReferenceId": "PAY-20260906-A34F9B",
+      "licenseId": null,
+      "previousStatus": null,
+      "newStatus": "UNACTIVE",
+      "details": "Order created by Yuvaraj Gummudu (yuvarajgummudu2266@gmail.com) with ref PAY-20260906-A34F9B"
+    },
     {
       "id": "AUD-1788678164078-681",
       "timestamp": "2026-09-06T07:02:44.078Z",
