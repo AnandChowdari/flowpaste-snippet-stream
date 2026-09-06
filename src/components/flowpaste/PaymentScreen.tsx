@@ -63,7 +63,7 @@ export function PaymentScreen({
           <div className="aspect-square w-full relative flex items-center justify-center bg-white rounded-xl overflow-hidden p-2">
             {order.adminUpiId ? (
               <QRCodeSVG 
-                value={`upi://pay?pa=${order.adminUpiId}&pn=FlowPaste%20Admin&am=${order.amount}&cu=INR`}
+                value={`upi://pay?pa=${order.adminUpiId}&pn=FlowPaste%20Admin&tr=${order.id}&tn=FlowPaste%20Order&am=${order.amount}&cu=INR`}
                 size={220}
                 level="Q"
                 includeMargin={false}
@@ -88,7 +88,7 @@ export function PaymentScreen({
             variant="secondary"
             className="mt-4 w-full max-w-[260px]"
             onClick={() => {
-              window.location.href = `upi://pay?pa=${order.adminUpiId}&pn=FlowPaste%20Admin&am=${order.amount}&cu=INR`;
+              window.location.href = `upi://pay?pa=${order.adminUpiId}&pn=FlowPaste%20Admin&tr=${order.id}&tn=FlowPaste%20Order&am=${order.amount}&cu=INR`;
             }}
           >
             Pay with UPI App
