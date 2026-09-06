@@ -48,7 +48,7 @@ export function PaymentScreen({
         </div>
         <div className="min-w-0 sm:text-right">
           <dt className="text-xs text-muted-foreground">Amount</dt>
-          <dd className="font-display text-lg font-bold">{order.plan.priceLabel}</dd>
+          <dd className="font-display text-lg font-bold">₹{order.amount}</dd>
         </div>
       </dl>
 
@@ -57,7 +57,7 @@ export function PaymentScreen({
           <div className="aspect-square w-full relative flex items-center justify-center bg-white rounded-xl overflow-hidden p-2">
             {order.adminUpiId ? (
               <QRCodeSVG 
-                value={`upi://pay?pa=${order.adminUpiId}&pn=FlowPaste%20Admin&am=${order.plan.price}&cu=INR`}
+                value={`upi://pay?pa=${order.adminUpiId}&pn=FlowPaste%20Admin&am=${order.amount}&cu=INR`}
                 size={220}
                 level="Q"
                 includeMargin={false}
@@ -80,7 +80,7 @@ export function PaymentScreen({
 
       <ol className="mt-6 space-y-2 text-sm text-muted-foreground">
         <li>1. Open any UPI app and scan the QR code above.</li>
-        <li>2. Pay exactly {order.plan.priceLabel}.</li>
+        <li>2. Pay exactly ₹{order.amount}.</li>
         <li>3. Enter your UPI Transaction Reference / UTR below so the admin can verify it.</li>
       </ol>
 

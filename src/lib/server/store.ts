@@ -39,7 +39,7 @@ function readStore(): AppStoreData {
       auditLogs: Array.isArray(parsed.auditLogs) ? parsed.auditLogs : [],
       emailLogs: Array.isArray(parsed.emailLogs) ? parsed.emailLogs : [],
       nextLicenseSeq: typeof parsed.nextLicenseSeq === "number" ? parsed.nextLicenseSeq : 1,
-      adminUpiId: typeof parsed.adminUpiId === "string" ? parsed.adminUpiId : INITIAL_STORE.adminUpiId,
+      adminUpiId: typeof parsed.adminUpiId === "string" ? parsed.adminUpiId : "yourupi@paytm",
     };
   } catch (err) {
     console.error("[Store] Error reading store.json:", err);

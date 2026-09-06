@@ -38,7 +38,7 @@ export function Navbar() {
 
         <div className="hidden md:block">
           <Button asChild variant="hero" size="default" className="rounded-xl">
-            <Link to="/purchase" search={{ plan: "pro" }}>
+            <Link to="/purchase" search={{ plan: "starter" }}>
               Get FlowPaste
             </Link>
           </Button>
@@ -70,7 +70,7 @@ export function Navbar() {
               </a>
             ))}
             <Button asChild variant="hero" size="lg" className="mt-2 w-full">
-              <Link to="/purchase" search={{ plan: "pro" }} onClick={() => setOpen(false)}>
+              <Link to="/purchase" search={{ plan: "starter" }} onClick={() => setOpen(false)}>
                 Get FlowPaste
               </Link>
             </Button>

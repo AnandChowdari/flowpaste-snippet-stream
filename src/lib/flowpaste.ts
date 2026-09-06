@@ -1,6 +1,6 @@
 // FlowPaste client service layer
 
-export type PlanId = "starter" | "pro";
+export type PlanId = "starter";
 
 export interface Plan {
   id: PlanId;
@@ -17,7 +17,7 @@ export const PLANS: Plan[] = [
     id: "starter",
     name: "Starter",
     price: 49,
-    priceLabel: "₹49",
+    priceLabel: `₹49 - ₹70`,
     blurb: "The core copy-paste workflow, without the AI extras.",
     features: [
       "FlowPaste extension",
@@ -26,27 +26,12 @@ export const PLANS: Plan[] = [
       "Search and recently used",
       "One-time purchase",
     ],
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    price: 99,
-    priceLabel: "₹99",
-    blurb: "Adds AI Assist — powered by your own free Gemini API key.",
-    features: [
-      "Everything in Starter",
-      "AI Assist with your Gemini API key (free)",
-      "Reads selected text on the page",
-      "Inserts an AI-drafted response into any editor",
-      "Your key stays on your device",
-      "One-time purchase",
-    ],
     recommended: true,
   },
 ];
 
 export function getPlan(id: string | undefined | null): Plan {
-  return PLANS.find((p) => p.id === id) ?? PLANS[1]!;
+  return PLANS.find((p) => p.id === id) ?? PLANS[0]!;
 }
 
 export interface Customer {
@@ -90,6 +75,7 @@ export async function generatePaymentReference(): Promise<string> {
 
 /** Create the order row in backend (Google Sheets / Store) */
 export async function createOrder(customer: Customer, plan: Plan): Promise<Order> {
+  const dynamicPrice = Math.floor(Math.random() * (70 - 49 + 1)) + 49;
   try {
     const res = await fetch("/api/orders/create", {
       method: "POST",
@@ -99,7 +85,7 @@ export async function createOrder(customer: Customer, plan: Plan): Promise<Order
         email: customer.email,
         planId: plan.id,
         planName: plan.name,
-        amount: plan.price,
+        amount: dynamicPrice,
         currency: "INR",
       }),
     });
@@ -114,7 +100,7 @@ export async function createOrder(customer: Customer, plan: Plan): Promise<Order
         amount: result.order.amount,
         status: "created",
         createdAt: result.order.createdAt,
-        adminUpiId: result.adminUpiId,
+        ...(result.adminUpiId ? { adminUpiId: result.adminUpiId } : {}),
       };
     }
   } catch (err) {
@@ -128,7 +114,7 @@ export async function createOrder(customer: Customer, plan: Plan): Promise<Order
     reference,
     plan,
     customer,
-    amount: plan.price,
+    amount: dynamicPrice,
     status: "created",
     createdAt: new Date().toISOString(),
   };

@@ -1,6 +1,23 @@
 {
   "orders": [
     {
+      "orderId": "ORD-21566322",
+      "customerName": "Yuvaraj Gummudu",
+      "email": "yuvarajgummudu2266@gmail.com",
+      "paymentReferenceId": "PAY-20260906-A3EB7B",
+      "amount": 49,
+      "currency": "INR",
+      "planId": "starter",
+      "planName": "Starter",
+      "paymentStatus": "UNACTIVE",
+      "paymentVerified": false,
+      "licenseId": null,
+      "createdAt": "2026-09-06T07:02:44.078Z",
+      "verifiedAt": null,
+      "credentialsSentAt": null,
+      "emailDeliveryStatus": "PENDING"
+    },
+    {
       "orderId": "ORD-38114391",
       "customerName": "Anand Chowdari",
       "email": "connect.anandchowdari@gmail.com",
@@ -33,6 +50,24 @@
       "createdAt": "2026-09-04T15:16:49.597Z",
       "verifiedAt": "2026-09-04T15:17:07.630Z",
       "credentialsSentAt": "2026-09-04T15:18:06.423Z",
+      "emailDeliveryStatus": "SENT",
+      "emailError": null
+    },
+    {
+      "orderId": "ORD-42345017",
+      "customerName": "Alahari Revanth Naidu",
+      "email": "revanthnaidualaharii@gmail.com",
+      "paymentReferenceId": "PAY-20260905-167C28",
+      "amount": 49,
+      "currency": "INR",
+      "planId": "standard",
+      "planName": "Flow Paste License",
+      "paymentStatus": "PAID",
+      "paymentVerified": true,
+      "licenseId": "LIC-000003",
+      "createdAt": "2026-09-05T19:12:37.439Z",
+      "verifiedAt": "2026-09-05T19:13:54.410Z",
+      "credentialsSentAt": "2026-09-05T19:16:07.633Z",
       "emailDeliveryStatus": "SENT",
       "emailError": null
     }
@@ -131,6 +166,102 @@
     }
   ],
   "auditLogs": [
+    {
+      "id": "AUD-1788678164078-681",
+      "timestamp": "2026-09-06T07:02:44.078Z",
+      "adminUser": "customer",
+      "action": "CREATE_ORDER",
+      "orderId": "ORD-21566322",
+      "paymentReferenceId": "PAY-20260906-A3EB7B",
+      "licenseId": null,
+      "previousStatus": null,
+      "newStatus": "UNACTIVE",
+      "details": "Order created by Yuvaraj Gummudu (yuvarajgummudu2266@gmail.com) with ref PAY-20260906-A3EB7B"
+    },
+    {
+      "id": "AUD-1788678139460-510",
+      "timestamp": "2026-09-06T07:02:19.460Z",
+      "adminUser": "support.support49",
+      "action": "ORDER_DELETED",
+      "orderId": "ORD-10464674",
+      "paymentReferenceId": "PAY-20260906-A88B7E",
+      "licenseId": null,
+      "previousStatus": "EXISTING",
+      "newStatus": "DELETED",
+      "details": "Order ORD-10464674 deleted by administrator"
+    },
+    {
+      "id": "AUD-1788678132024-437",
+      "timestamp": "2026-09-06T07:02:12.024Z",
+      "adminUser": "support.support49",
+      "action": "ORDER_DELETED",
+      "orderId": "ORD-10464674",
+      "paymentReferenceId": "PAY-20260906-A88B7E",
+      "licenseId": null,
+      "previousStatus": "EXISTING",
+      "newStatus": "DELETED",
+      "details": "Order ORD-10464674 deleted by administrator"
+    },
+    {
+      "id": "AUD-1788678129000-811",
+      "timestamp": "2026-09-06T07:02:09.000Z",
+      "adminUser": "support.support49",
+      "action": "ORDER_DELETED",
+      "orderId": "ORD-63824481",
+      "paymentReferenceId": "PAY-20260906-8ACFCF",
+      "licenseId": null,
+      "previousStatus": "EXISTING",
+      "newStatus": "DELETED",
+      "details": "Order ORD-63824481 deleted by administrator"
+    },
+    {
+      "id": "AUD-1788678126198-851",
+      "timestamp": "2026-09-06T07:02:06.198Z",
+      "adminUser": "support.support49",
+      "action": "ORDER_DELETED",
+      "orderId": "ORD-59097094",
+      "paymentReferenceId": "PAY-20260905-605CEF",
+      "licenseId": null,
+      "previousStatus": "EXISTING",
+      "newStatus": "DELETED",
+      "details": "Order ORD-59097094 deleted by administrator"
+    },
+    {
+      "id": "AUD-1788678120614-617",
+      "timestamp": "2026-09-06T07:02:00.614Z",
+      "adminUser": "support.support49",
+      "action": "ORDER_DELETED",
+      "orderId": "ORD-86907666",
+      "paymentReferenceId": "PAY-20260905-8B3F67",
+      "licenseId": null,
+      "previousStatus": "EXISTING",
+      "newStatus": "DELETED",
+      "details": "Order ORD-86907666 deleted by administrator"
+    },
+    {
+      "id": "AUD-1788678069642-567",
+      "timestamp": "2026-09-06T07:01:09.642Z",
+      "adminUser": "customer",
+      "action": "CREATE_ORDER",
+      "orderId": "ORD-10464674",
+      "paymentReferenceId": "PAY-20260906-A88B7E",
+      "licenseId": null,
+      "previousStatus": null,
+      "newStatus": "UNACTIVE",
+      "details": "Order created by Yuvaraj Gummudu (yuvarajgummudu2266@gmail.com) with ref PAY-20260906-A88B7E"
+    },
+    {
+      "id": "AUD-1788677531365-655",
+      "timestamp": "2026-09-06T06:52:11.365Z",
+      "adminUser": "customer",
+      "action": "CREATE_ORDER",
+      "orderId": "ORD-63824481",
+      "paymentReferenceId": "PAY-20260906-8ACFCF",
+      "licenseId": null,
+      "previousStatus": null,
+      "newStatus": "UNACTIVE",
+      "details": "Order created by Yuvaraj Gummudu (yuvarajgummudu2266@gmail.com) with ref PAY-20260906-8ACFCF"
+    },
     {
       "id": "AUD-1788540574527-942",
       "timestamp": "2026-09-04T16:49:34.527Z",
@@ -1244,5 +1375,5 @@
     }
   ],
   "nextLicenseSeq": 18,
-  "adminUpiId": "83748400@ybl"
+  "adminUpiId": "8374840055@ybl"
 }

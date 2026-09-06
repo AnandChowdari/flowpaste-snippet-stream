@@ -38,10 +38,7 @@ function TermsAndConditions() {
             <li>Use the extension for any illegal or unauthorized purpose.</li>
           </ul>
 
-          <h2 className="text-2xl font-bold text-foreground mt-8">4. AI Features (Pro Plan)</h2>
-          <p>
-            The Pro plan includes AI assistance features that require you to provide your own Gemini API key. You are solely responsible for compliance with Google's API Terms of Service and any usage costs (if applicable) incurred on your API account. FlowPaste does not provide the API service directly and is not responsible for API downtime or policy changes by the API provider.
-          </p>
+
 
           <h2 className="text-2xl font-bold text-foreground mt-8">5. Termination</h2>
           <p>
