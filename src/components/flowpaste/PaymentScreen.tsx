@@ -78,22 +78,10 @@ export function PaymentScreen({
             )}
           </div>
         </div>
-        <p className="mt-3 text-sm font-medium">Scan or click to pay with UPI</p>
-        <p className="mt-1 text-xs text-muted-foreground text-center">
+        <p className="mt-3 text-sm font-medium">Scan with your preferred UPI app</p>
+        <p className="mt-1 text-xs text-muted-foreground">
           Pay via PhonePe, Google Pay, Paytm, or any UPI app.
         </p>
-        {order.adminUpiId && (
-          <Button
-            type="button"
-            variant="secondary"
-            className="mt-4 w-full max-w-[260px]"
-            onClick={() => {
-              window.location.href = `upi://pay?pa=${order.adminUpiId}&pn=FlowPaste%20Admin&tr=${order.id}&tn=FlowPaste%20Order&am=${order.amount}&cu=INR`;
-            }}
-          >
-            Pay with UPI App
-          </Button>
-        )}
       </div>
 
       <ol className="mt-6 space-y-2 text-sm text-muted-foreground">
